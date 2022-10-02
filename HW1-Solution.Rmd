@@ -1,0 +1,164 @@
+---
+title: "HW1-Solution"
+author: "Aditya Singh"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: 
+    highlight: tango
+  html_document: 
+    theme: lumen
+fontsize: 30pt
+---
+
+# Part A
+
+## Problem 1
+
+For Problem 1 part A, I have created a `data.frame` with `row.names` as student names and columns as scores in some test.
+
+```{r}
+testdf <- data.frame(row.names=c("Jack", "Rosa", "Dawn", "Vicki", "Blake", "Guillermo"), age=c(24, 23, NA, 25, 32, 19),
+city=c("Harlem", NA, "Queens", "Brooklyn", "Brooklyn", NA),gpa=c(3.5, 3.6, 4.0, NA, 3.8, NA))
+print(testdf)
+```
+
+Below is the `countNA` function which takes arguments `data.frame` and `byrow` to return a numeric vector of missing values(NAs) for each row or each column of data(depending on the *byrow* argument).
+
+```{r}
+countNA <- function(df,byrow=FALSE){
+  if(byrow){
+    return (rowSums(is.na(df)))
+  }
+  else{
+    return (sapply(df,function(df) sum(is.na(df))))
+  }
+}
+```
+
+The Following is the output when *byrow* is `FALSE`.
+```{r}
+print(testdf)
+countNA(testdf)
+```
+The Following is the output when *byrow* is `TRUE`.
+```{r}
+print(testdf)
+countNA(testdf,TRUE)
+```
+
+## Problem 2
+
+Lets take a sample `data.frame` to solve this problem.
+```{r}
+df = data.frame(row.names=c(1:8),
+                city=c('Mumbai','Pune',NA,'Mumbai',NA,'Chennai','Chennai','Banglore'),
+                Income=c(1000000,765097,888690,NA,676538,968271,634158,4271821),
+                Age = c(85,77,82,NA,75,80,73,69)
+                )
+print(df)
+```
+
+Now first, lets write a function `getmode` which will return the mode of categorical column provided in argument.
+```{r}
+getmode <- function(x){
+  val <- unique(x[!is.na(x)])
+  return (val[which.max(tabulate(match(x,val)))])
+}
+
+```
+
+Below is a imputation function
+```{r}
+imputeNA <- function(df, use.mean= FALSE){
+  for(i in c(1:length(names(df)))){
+      if(class(df[,i])=="character"){
+        df[ , i][is.na(df[ , i])]<-getmode(df[,i])
+      }
+      else{
+        if(use.mean){
+          df[ , i][is.na(df[ , i])]<-mean(df[,i],na.rm=TRUE)
+        }
+        else{
+          df[ , i][is.na(df[ , i])]<-median(df[,i],na.rm=TRUE)
+        }
+      }
+     
+    }
+  return (df)
+}
+```
+
+First imputation with `median`
+```{r}
+print(df)
+imputeNA(df)
+```
+Now Imputation with `mean`
+```{r}
+print(df)
+imputeNA(df,TRUE)
+```
+
+# Part B
+
+## Problem 3
+
+
+```{r}
+library(fivethirtyeight)
+df <- get(data('congress_age'))
+library(ggplot2)
+
+x <-ggplot(data= subset(df,df$chamber=='house'), mapping = aes(x=as.factor(congress),y=age),colour= chamber)+ scale_fill_brewer(palette="BuPu") 
+x + geom_boxplot(alpha = 0.3,fill='blue')+labs(x="Congress House",y='Age')+ 
+stat_summary(fun=median, geom="point", shape=20, size=3, color="red", fill="red")
+```
+
+From the above `boxplot` we can make see that the median age increases from *80* to *86* then decreases from *92* to *98* then increases again from *99* to *113*
+```{r}
+x <-ggplot(data= subset(df,df$chamber=='senate'), mapping = aes(x=as.factor(congress),y=age),colour= chamber)+ scale_fill_brewer(palette="BuPu") 
+x + geom_boxplot(alpha = 0.3,fill='blue')+labs(x="Congress Senate",y='Age')+ 
+stat_summary(fun=median, geom="point", shape=20, size=3, color="red", fill="red")
+```
+
+From the above `boxplot` we can make see that the median age increases from *80* to *89* then decreases from *91* to *96* then increases again from *105* to *113* 
+
+In general the `median` age for Senate is more than that of house  
+
+## Problem 4
+
+```{r}
+library(fivethirtyeight)
+df <- get(data('police_killings'))
+```
+
+
+```{r}
+data_omit <- na.omit(df)
+
+df_base <- ggplot(data = data_omit, aes(x=nat_bucket))
+df_base + geom_bar(stat="count",aes(fill=raceethnicity),position = position_dodge())+labs(x='Nat Bucket',y='Count')
+```
+
+From the above bar plot we can infer that the killing increases for people belonging to lower `nat_bucket`, *specially in case of people belonging to Black ethnicity* the increase in killing is pretty drastic and evident. 
+
+
+## Problem 5
+
+```{r}
+library(fivethirtyeight)
+df <- get(data("bechdel"))
+df <- na.omit(df)
+df$totalgross_2013 <- df$domgross_2013 + df$intgross_2013
+
+df_base <- ggplot(data = df, aes(x=budget_2013,y=totalgross_2013,color=binary))
+df_base + geom_point(size=0.02,alpha=0.01) + scale_x_log10() + facet_wrap(facets = vars(binary))+labs(x='Budget 2013', y = 'Total gross 2013') + geom_jitter(width = 1, height = 1)
+```
+In general as the Budget of movie increases we can increase in Total gross of the movie too. However, there is no strong relation between success of movie and Bechdel test though some high budget movies that have failed the test have performed slightly better than movies with similar budget that have passed the test. And in case of low budget movies its opposite i.e movies which have passed the test have performed slightly better then the movies which have failed the test. 
+
+
+
+
+
+
+
